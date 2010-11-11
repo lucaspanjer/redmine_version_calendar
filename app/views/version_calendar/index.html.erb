@@ -1,0 +1,61 @@
+<% content_for :header_tags do %>
+    <%= stylesheet_link_tag 'time_calendar', :plugin => 'redmine_time_calendar' %>
+<% end %>
+<h2>Versions Calendar</h2>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" id="calendar">
+	<tr>
+  	<td colspan="7" id="stop">
+    	<table width="100%" border="0" cellspacing="0" cellpadding="0" id="calendar-hd">
+      	<tr>
+          <td id="prev-mt"><a href="/version_calendar/<%= @prev_week.cwyear %>/<%= @prev_week.cweek %>">&laquo; Week <%= @prev_week.cweek %></a> | <a href="/version_calendar">Today</a> | <a href="/version_calendar/<%= @next_week.cwyear %>/<%= @next_week.cweek %>">Week <%= @next_week.cweek %> &raquo;</a></td>
+          <td id="current-mt"><%= Date::MONTHNAMES[@date.month] %> <%= @date.year %></td>
+          <td id="next-mt"></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <% Date::DAYNAMES.each do |d| %>
+    <th scope="col"><%= d %></th>
+    <% end %>
+  </tr>
+  <tr class="min-height">
+    <% @start_date.step(@end_date) do |date| %>
+    <td align="left" valign="top" class="<%= date.month == @date.month ? '' : 'inactive' %>" <%= date == @today ? 'id="selected"' : '' %>>
+    	<div class="day"><%= link_to date.day, :controller => 'timesheet', :action => 'report', :timesheet => { :date_from => date, :date_to => date, :users => [@user.id], :sort => 'project' } %></div>
+        <ul>
+          <% @version_map[date].each do |vs| %>
+          <li><span class="left"><%= link_to("#{vs.project.name_with_ancestor_prefix} - #{vs.name}", :anchor => vs.name) %></span> <span class="right"></span></li>
+          <% end %>
+        </ul>
+     </td>
+    <% if date.wday == 6 %></tr><tr><% end %>
+    <% end %>
+  </tr>
+</table>
+
+<div id="roadmap">
+<% @versions.each do |version| %>
+    <%= tag 'a', :name => version.name %>
+    <h3 class="icon22 icon22-package"><%= link_to h("#{version.project.name_with_ancestor_prefix} - #{version.name}"), :controller => 'versions', :action => 'show', :id => version %></h3>
+    <%= render :partial => 'versions/overview', :locals => {:version => version} %>
+    <%= render(:partial => "wiki/content", :locals => {:content => version.wiki_page.content}) if version.wiki_page %>
+
+    <% issues = version.fixed_issues.find(:all,
+                                          :include => [:status, :tracker])
+#                                          :conditions => ["tracker_id in (#{@selected_tracker_ids.join(',')})"],
+#                                          :order => "#{Tracker.table_name}.position, #{Issue.table_name}.id") unless @selected_tracker_ids.empty?
+       issues ||= []
+    %>
+    <% if issues.size > 0 %>
+    <fieldset class="related-issues"><legend><%= l(:label_related_issues) %></legend>
+    <ul>
+    <%- issues.each do |issue| -%>
+        <li><%= link_to_issue(issue) %>: <%=h issue.subject %></li>
+    <%- end -%>
+    </ul>
+    </fieldset>
+    <% end %>
+    <%= call_hook :view_projects_roadmap_version_bottom, :version => version %>
+<% end %>
+</div>
