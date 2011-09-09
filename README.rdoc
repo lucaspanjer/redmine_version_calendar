@@ -1,3 +1,7 @@
 = redmine_version_calendar
 
 A Redmine plugin that adds a monthly calendar with all version due dates.
+
+== Installation
+
+Install as a typical Redmine plugin into the plugins directory.
